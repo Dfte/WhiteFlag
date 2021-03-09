@@ -7,6 +7,7 @@ To translate the IDL file:
 To compile the client/server:
 
 > cl.exe /D UNICODE /EHsc RemotePrivilege_c.c client.cpp
+
 > cl.exe /D UNICODE /EHsc RemotePrivilege_s.c server.cpp
 
 Happy hacking :) !
