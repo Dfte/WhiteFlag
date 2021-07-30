@@ -1,12 +1,12 @@
 [
-   uuid(AB4ED934-1293-10DE-BC12-AE18C48DEF33),
-   version(1.0),
-   implicit_handle(handle_t ImplicitHandle)
+	uuid(12345778-1234-ABCD-EF00-0123456789AC),
+	version(1.0),
+	implicit_handle(handle_t ImplicitHandle)
 ]
 interface RemotePrivilegeCall
 {
-   [id(1)]void SendReverseShell(
-      [in, string] const char* ip_address,
-	  [in] int port
-	  );
+	void SendReverseShell(
+		[in, string] wchar_t* ip_address,
+		[in] int port
+	);
 }
